@@ -112,7 +112,7 @@ function slot(k,d,day){const o=(S[d]||{})[k]||{},isF=k=="f",on=!isF||feedOn(day)
  <input class="c" data-f="c" placeholder="Canva: link o nombre (ej. ${isF?"feed":"hist"} ${day.getDate()}.${day.getMonth()+1})" value="${esc(o.c)}">
  <div class="r"><button data-a="up"${AS?"":' disabled title="Solo quien publicó el calendario puede cargar archivos"'}>⬆ Cargar archivo</button><button data-a="dl"${o.a?"":" disabled"}>⬇ Descargar archivo</button></div>${o.a?`<div class="fn">📎 ${esc(o.a.name)}</div>`:""}
  ${/^https?:\/\//.test(o.c||"")?`<a href="${esc(o.c)}" target="_blank" rel="noopener">Abrir en Canva ↗</a>`:""}</div>`}
-const W=()=>{const c=G.firstElementChild;return c?c.offsetWidth+10:280};
+const W=()=>{const c=G.children;if(c.length>1){const d=c[1].getBoundingClientRect().left-c[0].getBoundingClientRect().left;if(d>0)return d}return c[0]?c[0].offsetWidth+10:280};
 let from,N;function initWeek(){from=mon(new Date());if(mob())N=7;else{from.setDate(from.getDate()-14);N=84}}initWeek();
 function wkc(m){let f=0,h=0;for(let i=0;i<7;i++){const d=new Date(m);d.setDate(m.getDate()+i);const o=S[iso(d)]||{};if(o.f&&o.f.t)f++;if(o.h&&o.h.t)h++}return[f,h]}
 function upd(){if(view!="w"||!G.firstElementChild)return;const d=new Date(from);if(!mob())d.setDate(d.getDate()+Math.round(G.scrollLeft/W()));vd=d;const m=mon(d),e=new Date(m);e.setDate(m.getDate()+6);const c=wkc(m);
@@ -155,7 +155,7 @@ G.addEventListener("click",async ev=>{try{const rb=ev.target.closest("button[dat
  renderDay(d);save(d)}catch(e){sv("Error: "+(e&&e.message||e))}});
 const nav=n=>{if(view=="w"&&mob()){from.setDate(from.getDate()+7*n);render();window.scrollTo(0,0)}else if(view=="w")G.scrollBy({left:n*7*W(),behavior:"smooth"});else{cur=new Date(cur.getFullYear(),cur.getMonth()+(view=="m"?n:12*n),1);showView()}};
 pv.onclick=()=>nav(-1);nx.onclick=()=>nav(1);
-td.onclick=()=>{if(view=="w"&&mob()){from=mon(new Date());render();const t=document.querySelector(".day.today");if(t)t.scrollIntoView({block:"start"})}else if(view=="w")G.scrollTo({left:Math.max(0,(ord(new Date())-ord(from)-1)*W()),behavior:"smooth"});else{const n=new Date();cur=new Date(n.getFullYear(),n.getMonth(),1);showView()}};
+td.onclick=()=>{if(view=="w"&&mob()){from=mon(new Date());render();const t=document.querySelector(".day.today");if(t)t.scrollIntoView({block:"start"})}else if(view=="w"){busy=1;initWeek();render();busy=0;goToday()}else{const n=new Date();cur=new Date(n.getFullYear(),n.getMonth(),1);showView()}};
 G.addEventListener("wheel",e=>{if(mob()||e.ctrlKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;e.preventDefault();G.scrollLeft+=e.deltaY},{passive:false});
 let busy=0;G.addEventListener("scroll",()=>{upd();if(mob()||busy||N>700)return;const m=G.scrollWidth-G.clientWidth;
  if(G.scrollLeft<400){busy=1;from.setDate(from.getDate()-28);N+=28;render(28*W());busy=0}
@@ -188,10 +188,10 @@ $("rc").onclick=()=>{$("rf").hidden=true};
 $("rs").onclick=()=>{const t=$("rt").value.trim(),d=$("rdte").value;if(!t||!d){sv("Poné un título y una fecha.");return}
  const it={id:"r"+Date.now(),t,h:$("rh").value,k:$("rk").value,x:0};if(ME&&ME.id)it.by=ME.id;else if($("rn").value.trim())it.bn=$("rn").value.trim();
  S[d]=S[d]||{};(S[d].r=S[d].r||[]).push(it);renderDay(d);save(d);$("rf").hidden=true;if(view!="w")showView();sv("Agendado el "+d.split("-").reverse().join("/")+" ✓")};
-function goToday(){if(!mob())G.scrollLeft=Math.max(0,(ord(new Date())-ord(from)-1)*W());upd()}
+function goToday(){if(!mob()){const t=G.querySelector(".day.today");if(t)G.scrollLeft+=t.getBoundingClientRect().left-G.getBoundingClientRect().left-W();else G.scrollLeft=Math.max(0,(ord(new Date())-ord(from)-1)*W())}upd()}
 function unlock(){document.body.classList.remove("locked");$("lg").hidden=true;view="w";initWeek();showView();render();goToday()}
 {const li=document.querySelector(".brand img");if(li)$("lgo").src=li.src}
-MQ.onchange=()=>{initWeek();render();if(!mob())G.scrollLeft=Math.max(0,(ord(new Date())-ord(from)-1)*W())};
+MQ.onchange=()=>{initWeek();render();goToday()};
 function showLogin(m){$("ln").value=ls.get("ruma_login");$("lk").value="";$("lm").textContent=m||"";$("lg").hidden=false}
 function logout(m){TOKEN="";ls.set("ruma_session","");clearInterval(timer);$("who").textContent="";S={};DIRTY={};PEND={};try{localStorage.removeItem(K);localStorage.removeItem("ruma_cont")}catch(e){}document.body.classList.add("locked");if(G)G.innerHTML="";showLogin(m)}
 let timer=null,vis=0;
