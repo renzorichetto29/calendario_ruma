@@ -77,9 +77,9 @@ input,textarea,select{font-size:16px}.r button,.r select{font-size:14px;padding:
 <div class="cnt" id="cnt"></div><div class="grid" id="grid"></div>
 </section>
 <section id="vm" hidden></section><section id="vy" hidden></section>
-<div class="rf" id="lg" hidden><div><b>Entrar al calendario</b><input id="ln" placeholder="Tu nombre (ej. Renzo)" autocomplete="name"><input id="lk" type="password" placeholder="Clave del equipo"><div id="lm" class="m"></div><button class="p" id="ls">Entrar</button></div></div>
+<div class="rf" id="lg" hidden><div><b>Entrar al calendario</b><input id="ln" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false"><input id="lk" type="password" placeholder="Contraseña" autocomplete="current-password"><div id="lm" class="m"></div><button class="p" id="ls">Entrar</button></div></div>
 <div class="rf" id="rf" hidden><div><b>Nuevo recordatorio</b><input id="rt" placeholder="Ej: Grabar yapping de sillones"><label>Fecha <input type="date" id="rdte"></label><label>Hora (opcional) <input type="time" id="rh"></label><div id="rby" class="m"></div><input id="rn" placeholder="Tu nombre" hidden><select id="rk"><option>Crear contenido</option><option>Grabar / sacar fotos</option><option>Editar</option><option>Publicar</option><option>Recordatorio</option></select><div class="r"><button class="p" id="rs">Agendar</button><button id="rc">Cancelar</button></div></div></div>
-<p class="note">Los textos en cursiva son sugerencias: usalas, cambialas con ↻ o escribí lo tuyo. Elegí la vista (semana, mes o año) arriba a la izquierda. Pegá en "Canva" el link del diseño o el nombre (ej. feed 29.9). Los archivos se guardan en Drive y los pueden bajar todos los que usen el calendario. <span id="sv"></span> · <span id="who"></span> <a href="#" id="out">Cambiar usuario</a></p>
+<p class="note">Los textos en cursiva son sugerencias: usalas, cambialas con ↻ o escribí lo tuyo. Elegí la vista (semana, mes o año) arriba a la izquierda. Pegá en "Canva" el link del diseño o el nombre (ej. feed 29.9). Los archivos se guardan en Drive y los pueden bajar todos los que usen el calendario. <span id="sv"></span> · <span id="who"></span> <a href="#" id="out">Salir</a></p>
 <script src="config.js"></script>
 <script>
 const DN=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"],MN=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
@@ -111,11 +111,11 @@ const EF={ // MM-DD: [título, dato de color, idea Ruma]
 const K="ruma_cal_gh_v1";let S={},PEND={},DIRTY={};
 const CFG=window.RUMA_CONFIG||{},MQ=matchMedia("(max-width:760px)"),mob=()=>MQ.matches;
 const ls={get:k=>{try{return localStorage.getItem(k)||""}catch(e){return""}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
-let USER=ls.get("ruma_user"),TOKEN=ls.get("ruma_token");
+let USER=ls.get("ruma_user"),TOKEN=ls.get("ruma_session");
 try{S=JSON.parse(localStorage.getItem(K)||"{}")}catch(e){}
 function mon(d){d=new Date(d.getFullYear(),d.getMonth(),d.getDate());d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
-function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function slot(k,d,day){const o=(S[d]||{})[k]||{},isF=k=="f",on=!isF||feedOn(day),pl=pool(k,day).length,sg=sug(k,day);
  return `<div class="slot" data-d="${d}" data-k="${k}"><div class="sl">${isF?"FEED":"HISTORIAS"}<em>${isF?(on?"sugerido":"opcional"):""}</em></div>
  <textarea placeholder="${isF?"Escribí tu idea o usá la sugerencia":"Historia del día"}" data-f="t">${esc(o.t)}</textarea>
@@ -131,7 +131,7 @@ function wkc(m){let f=0,h=0;for(let i=0;i<7;i++){const d=new Date(m);d.setDate(m
 function upd(){if(view!="w"||!G.firstElementChild)return;const d=new Date(from);if(!mob())d.setDate(d.getDate()+Math.round(G.scrollLeft/W()));vd=d;const m=mon(d),e=new Date(m);e.setDate(m.getDate()+6);const c=wkc(m);
  document.getElementById("wk").textContent="Semana "+m.getDate()+" "+MN[m.getMonth()]+" – "+e.getDate()+" "+MN[e.getMonth()]+" "+e.getFullYear();
  document.getElementById("cnt").innerHTML=`<span class="pill ${c[0]>=3&&c[0]<=5?"ok":"bad"}">Feed: ${c[0]} (objetivo 3 a 5)</span><span class="pill ${c[1]==7?"ok":"bad"}">Historias: ${c[1]}/7</span>${pendN()?`<span class="pill bad">🔔 ${pendN()} pendiente(s)</span>`:""}`}
-const rem=d=>{const r=(S[d]||{}).r||[];return r.length?`<div class="rm">${r.map(x=>`<div class="rr${x.x?" dn":""}"><span>🔔 ${x.h?esc(x.h)+" · ":""}${esc(x.t)} <em>· ${esc(x.k)}</em> <em class="by" data-uid="${x.by||""}">${x.by?(PF[x.by]&&PF[x.by].name?"· por "+esc(PF[x.by].name):""):(x.bn?"· por "+esc(x.bn):"")}</em></span><button data-id="${x.id}" data-a="rd" title="Marcar hecho">✓</button><button data-id="${x.id}" data-a="rx" title="Borrar">✕</button></div>`).join("")}</div>`:""};
+const rem=d=>{const r=(S[d]||{}).r||[];return r.length?`<div class="rm">${r.map(x=>`<div class="rr${x.x?" dn":""}"><span>🔔 ${x.h?esc(x.h)+" · ":""}${esc(x.t)} <em>· ${esc(x.k)}</em> <em class="by" data-uid="${esc(x.by)}">${x.by?(PF[x.by]&&PF[x.by].name?"· por "+esc(PF[x.by].name):""):(x.bn?"· por "+esc(x.bn):"")}</em></span><button data-id="${esc(x.id)}" data-a="rd" title="Marcar hecho">✓</button><button data-id="${esc(x.id)}" data-a="rx" title="Borrar">✕</button></div>`).join("")}</div>`:""};
 function dayHTML(day){const t=iso(new Date()),d=iso(day),e=EF[d.slice(5)];
   return `<div id="d-${d}" class="day${d==t?" today":d<t?" past":""}${day.getDay()==1?" mon":""}"><div class="dh">${DN[day.getDay()]} ${day.getDate()}<span>${MN[day.getMonth()]}</span></div>
   <div class="ef">${e?`<b>${esc(e[0])}</b>${esc(e[1])}<br><i>Idea: ${esc(e[2])}</i>`:`<i>Dato de color:</i> ${DC[ord(day)%12]}`}</div>${rem(d)}${slot("f",d,day)}${slot("h",d,day)}</div>`}
@@ -142,7 +142,7 @@ function renderDay(d){const el=document.getElementById("d-"+d);if(el){el.outerHT
 function save(d){S[d].v=Date.now();S[d].p=USER;PEND[d]=Date.now();try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}DIRTY[d]=1;flush()}
 let flushing=0;
 async function flush(){if(flushing||!TOKEN)return;flushing=1;try{for(const d of Object.keys(DIRTY)){const snap=JSON.stringify(S[d]);await api("saveDay",{fecha:d,doc:S[d]});if(JSON.stringify(S[d])===snap)delete DIRTY[d];sv("Guardado en la planilla ✓")}}catch(e){sv("Sin conexión: se vuelve a intentar solo")}flushing=0}
-async function api(action,p){if(!CFG.API_URL||/PEGAR/.test(CFG.API_URL))throw new Error("Falta la URL en config.js");const r=await fetch(CFG.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({action,token:TOKEN,user:USER},p||{}))});const j=await r.json();if(!j.ok){const e=new Error(j.error||"error");e.code=j.error;throw e}return j}
+async function api(action,p){if(!CFG.API_URL||/PEGAR/.test(CFG.API_URL))throw new Error("Falta la URL en config.js");const r=await fetch(CFG.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({action,token:TOKEN},p||{}))});const j=await r.json();if(!j.ok){if(j.error=="unauthorized"&&action!="login")logout("Tu sesión venció o tu usuario fue desactivado. Ingresá de nuevo.");const e=new Error(j.error||"error");e.code=j.error;throw e}return j}
 function apply(docs){const ch=[];for(const d in docs){const y=docs[d];if(DIRTY[d]||(PEND[d]&&Date.now()-PEND[d]<5000))continue;if(S[d]&&(y.v||0)<(S[d].v||0))continue;if(JSON.stringify(y)!==JSON.stringify(S[d])){S[d]=y;ch.push(d)}}
  if(ch.length){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}const a=document.activeElement;ch.forEach(d=>{const el=document.getElementById("d-"+d);if(el&&!(a&&el.contains(a)))renderDay(d)});if(view!="w")showView()}}
 async function sync(){await flush();const j=await api("loadAll");apply(j.dias||{});sv("Sincronizado ✓ "+new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}))}
@@ -164,7 +164,7 @@ G.addEventListener("click",async ev=>{try{const rb=ev.target.closest("button[dat
  else if(a=="undo"){const c=o.t||"";o.t=o.u||"";o.u=c}
  else if(a=="up"){const inp=document.createElement("input");inp.type="file";inp.onchange=async()=>{const f=inp.files[0];if(!f)return;sv("Subiendo "+f.name+"…");
    try{o.a=await putFile(f);renderDay(d);save(d)}catch(e){sv(errMsg(e,f))}};inp.click();return}
- else if(a=="dl"&&o.a){window.open(o.a.url,"_blank");return}
+ else if(a=="dl"&&o.a){if(/^https:\/\/(drive|docs)\.google\.com\//.test(o.a.url||""))window.open(o.a.url,"_blank","noopener");else sv("Enlace de archivo no válido");return}
  renderDay(d);save(d)}catch(e){sv("Error: "+(e&&e.message||e))}});
 const nav=n=>{if(view=="w"&&mob()){from.setDate(from.getDate()+7*n);render();window.scrollTo(0,0)}else if(view=="w")G.scrollBy({left:n*7*W(),behavior:"smooth"});else{cur=new Date(cur.getFullYear(),cur.getMonth()+(view=="m"?n:12*n),1);showView()}};
 pv.onclick=()=>nav(-1);nx.onclick=()=>nav(1);
@@ -203,12 +203,15 @@ $("rs").onclick=()=>{const t=$("rt").value.trim(),d=$("rdte").value;if(!t||!d){s
  S[d]=S[d]||{};(S[d].r=S[d].r||[]).push(it);renderDay(d);save(d);$("rf").hidden=true;if(view!="w")showView();sv("Agendado el "+d.split("-").reverse().join("/")+" ✓")};
 render();if(!mob())G.scrollLeft=Math.max(0,(ord(new Date())-ord(from)-1)*W());upd();
 MQ.onchange=()=>{initWeek();render();if(!mob())G.scrollLeft=Math.max(0,(ord(new Date())-ord(from)-1)*W())};
-function showLogin(m){$("ln").value=USER;$("lk").value="";$("lm").textContent=m||"";$("lg").hidden=false}
+function showLogin(m){$("ln").value=ls.get("ruma_login");$("lk").value="";$("lm").textContent=m||"";$("lg").hidden=false}
+function logout(m){TOKEN="";ls.set("ruma_session","");clearInterval(timer);$("who").textContent="";showLogin(m)}
 let timer=null,vis=0;
 function start(){ME={id:USER,name:USER};USR=1;PF[USER]={name:USER};$("who").textContent="Sesión: "+USER+" ·";clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)sync().catch(()=>{})},20000);if(!vis){vis=1;document.addEventListener("visibilitychange",()=>{if(!document.hidden&&TOKEN)sync().catch(()=>{})})}}
-$("ls").onclick=async()=>{const n=$("ln").value.trim(),k=$("lk").value.trim();if(!n||!k){$("lm").textContent="Completá tu nombre y la clave.";return}USER=n;TOKEN=k;try{await sync();ls.set("ruma_user",n);ls.set("ruma_token",k);$("lg").hidden=true;start();render()}catch(e){TOKEN="";$("lm").textContent=e.code=="unauthorized"?"La clave no es correcta.":"No se pudo conectar: "+(e.message||e)}};
-$("out").onclick=ev=>{ev.preventDefault();ls.set("ruma_token","");TOKEN="";showLogin()};
+$("ls").onclick=async()=>{const u=$("ln").value.trim().toLowerCase(),k=$("lk").value;if(!u||!k){$("lm").textContent="Completá usuario y contraseña.";return}$("lm").textContent="Entrando…";let j;try{j=await api("login",{usuario:u,password:k})}catch(e){$("lm").textContent=e.code=="login_incorrecto"?"Usuario o contraseña incorrectos.":e.code=="bloqueado"?"Demasiados intentos. Probá de nuevo en 15 minutos.":"No se pudo conectar: "+(e.message||e);return}
+ TOKEN=j.token;USER=j.nombre;ls.set("ruma_login",u);ls.set("ruma_user",USER);ls.set("ruma_session",TOKEN);$("lk").value="";$("lg").hidden=true;start();render();sync().catch(()=>sv("Sin conexión: se vuelve a intentar solo"))};
+$("lk").onkeydown=ev=>{if(ev.key=="Enter")$("ls").click()};
+$("out").onclick=ev=>{ev.preventDefault();logout()};
 if(!CFG.API_URL||/PEGAR/.test(CFG.API_URL)){sv("Falta pegar la URL de Apps Script en config.js")}
-else if(USER&&TOKEN){start();sync().catch(e=>{if(e.code=="unauthorized"){TOKEN="";showLogin("La clave cambió. Ingresala de nuevo.")}else sv("Sin conexión: se muestra lo guardado en este navegador")})}
+else if(USER&&TOKEN){start();sync().catch(e=>{if(e.code!="unauthorized")sv("Sin conexión: se muestra lo guardado en este navegador")})}
 else showLogin();
 </script></body></html>
